@@ -1,0 +1,204 @@
+---
+title: \vspace{3in}Explore data with tidyverse
+author: "Seun Odeyemi"
+date: "October 9, 2018"
+output: 
+  pdf_document:
+    df_print: tibble
+    toc: true
+  html_document:
+    toc: true
+---
+
+\centering
+\raggedright
+\newpage
+
+
+```{r setup, echo=TRUE}
+knitr::opts_knit$set(root.dir = "~/tidyverse/datasets/")
+```
+
+```{r session_info, include=TRUE, echo=TRUE, results='markup'}
+devtools::session_info()
+```
+
+# Load Packages
+```{r loadpackages, message=FALSE}
+library(tidyverse)
+library(skimr)
+```
+
+# Import Data
+```{r import_data}
+bakeoff <- read_csv("bakeoff.csv",
+                    na = c("", "NA", "UNKNOWN"))
+
+bakeoff %>% filter(is.na(showstopper))
+
+# convert the "series" variable type from integer to factor
+bakeoff <- bakeoff %>% mutate(series = as.factor(series))
+```
+
+# Getting summary statistics
+
+## Arrange and glimpse
+
+- Question: On which data date did the first episode of the show air in the US?
+
+```{r arrange_glimpse}
+bakeoff %>% arrange(us_airdate) %>% glimpse()
+```
+
+- Answer: 2014-12-28
+
+## Summarizing data with the skimr function skim
+
+```{r filter_and_skim, include=FALSE}
+bakeoff %>%
+  filter(!is.na(us_season)) %>% 
+  skim()
+```
+
+```{r skim_and_summary}
+bakeoff %>% 
+  skim() %>%  # no argument needed here
+  summary() # no argument needed here
+```
+
+# Counting data
+
+- How many distinct series are available in the data?
+
+```{r dplyr_distinct}
+bakeoff %>% distinct(series)
+```
+
+There are eight distinct series. 
+
+## Counting data with the dplyr function count
+
+- How can we count the number of distinct bakers for each series?
+
+```{r dplyr_count}
+bakeoff %>% count(series)
+
+# Using count produces the same output as the code below
+
+bakeoff %>% 
+  group_by(series) %>% 
+  summarize(n = n())
+
+
+```
+
+The above table shows us the number of bakers that appeared in each series. 
+
+## Count rows by two variables
+
+Here, I had to create a new variable called `aired_us` based on the conditional statement that checks if `us_season` is populated. If `us_season` is not populated assign _FALSE_ to `aired_us`; if populated assign _TRUE_.
+
+```{r create_var_by_mutate}
+bakeoff <- bakeoff %>% mutate(aired_us = 
+                     ifelse(is.na(us_season), FALSE,
+                            ifelse(us_season != '', TRUE, NA_complex_)))
+
+```
+
+Now, we can go ahead and answer the question: how many series have aired in the US?
+
+```{r count_two_vars}
+bakeoff %>% 
+  count(aired_us, series)
+```
+
+We can see that series 4, 5, 6, and 7 have aired in the US. 
+
+What if we are interested in checking for the proportion of bakers in each series for the whole show? 
+
+```{r count_mutate}
+bakeoff %>% 
+  count(aired_us, series) %>% 
+  mutate(prop_bakers = n/sum(n)) %>% 
+  mutate(prop_bakers = sprintf("%0.3f", prop_bakers))
+```
+
+The `count` function also ungroups a dataframe for us. For instance, if we group_by then summarize, we will get a surprisly different result from the one we go with the count function. 
+
+```{r}
+bakeoff %>% 
+  group_by(aired_us, series) %>% 
+  summarize(n = n()) %>% 
+  mutate(prop_bakers = n/sum(n)) %>% 
+  mutate(prop_bakers = sprintf("%0.3f", prop_bakers))
+```
+
+Compare this with
+
+```{r}
+bakeoff %>% 
+  group_by(aired_us, series) %>% 
+  summarize(n = n()) %>% 
+  ungroup() %>% 
+  mutate(prop_bakers = n/sum(n)) %>% 
+  mutate(prop_bakers = sprintf("%0.3f", prop_bakers))
+```
+
+They both do the same thing, but using count we have a more parsimonious code. 
+
+## Count to roll up a level
+
+```{r count_to_roll_up}
+bakeoff %>% 
+  count(aired_us, series) %>% 
+  count(aired_us)
+```
+
+The column name `nn` is the number of series that aired in the US. US viewers have seen half of the series aired in the UK.  
+
+```{r}
+bakeoff %>% 
+  count(result) 
+```
+
+```{r}
+bakeoff %>% count(result == "SB")
+```
+
+```{r}
+# Count the number of rows by series and episode
+bakeoff %>% count(series, episode)
+```
+
+```{r}
+# Add second count by series
+bakeoff %>% 
+  count(series, episode) %>%
+  count(series)
+```
+
+nn is the number of episodes in each series. 
+
+```{r}
+# Count the number of rows by series and baker
+bakers_by_series <- bakeoff %>% 
+  count(series, baker)
+  
+# Print to view
+# bakers_by_series
+  
+# Count again by series
+bakers_by_series %>% count(series)
+  
+# Count again by baker
+bakers_by_series %>% count(baker, sort = TRUE)
+```
+
+```{r}
+ggplot(bakeoff, aes(x = episode)) + 
+    geom_bar() + 
+    facet_wrap(~series)
+```
+
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
