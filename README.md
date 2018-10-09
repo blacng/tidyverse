@@ -1,3 +1,2 @@
 # tidyverse
-This is a line  from RStudio. 
-- Another line from RStudio. 
+A repository containing my exploration of tidyverse. 
