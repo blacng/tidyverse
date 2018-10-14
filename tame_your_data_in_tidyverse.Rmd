@@ -1,0 +1,59 @@
+---
+title: \vspace{3in}Tame your data in tidyverse
+author: "Seun Odeyemi"
+date: "October 13, 2018"
+output: 
+  pdf_document:
+    df_print: tibble
+    toc: true
+  html_document:
+    toc: true
+---
+
+\centering
+\raggedright
+\newpage
+
+
+```{r setup, echo=TRUE}
+knitr::opts_knit$set(root.dir = "C:/Users/USER/tidyverse/datasets")
+```
+
+```{r packrat_init echo=FALSE}
+# packrat::init()
+```
+
+```{r session_info, include=TRUE, echo=TRUE, results='markup'}
+# devtools::session_info()
+```
+
+# Load Packages
+```{r loadpackages, message=FALSE}
+library(tidyverse)
+library(skimr)
+```
+
+# Import Data
+
+```{r}
+# (bakers_raw <- read_csv("bakers_raw.csv"))
+desserts <- read_csv("desserts.csv",
+                      col_types = cols(
+                        technical = col_number(),
+                        uk_airdate = col_date(format = "%d %B %Y")), 
+                      na = c("", "NA", "N/A")
+                     )
+
+desserts %>% dplyr::slice(1:10)
+# parse_number("2nd")
+
+problems(desserts) # a readr function - stop_for_problems() will throw an error if there are any parsing problems 
+
+```
+
+- when did the last episode air in the UK?
+```{r arrange_sort_desc}
+desserts %>% 
+  arrange(desc(uk_airdate))
+```
+
