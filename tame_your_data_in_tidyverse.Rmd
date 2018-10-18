@@ -19,7 +19,7 @@ output:
 knitr::opts_knit$set(root.dir = "C:/Users/USER/tidyverse/datasets")
 ```
 
-```{r packrat_init echo=FALSE}
+```{r packrat_init, echo=FALSE}
 # packrat::init()
 ```
 
@@ -33,21 +33,22 @@ library(tidyverse)
 library(skimr)
 ```
 
-# Import Data
+# Cast column types with readr col_types
 
 ```{r}
 # (bakers_raw <- read_csv("bakers_raw.csv"))
 desserts <- read_csv("desserts.csv",
                       col_types = cols(
                         technical = col_number(),
-                        uk_airdate = col_date(format = "%d %B %Y")), 
+                        uk_airdate = col_date(format = "%d %B %Y"),
+                        result = col_factor(levels = NULL)),
                       na = c("", "NA", "N/A")
                      )
 
 desserts %>% dplyr::slice(1:10)
 # parse_number("2nd")
 
-problems(desserts) # a readr function - stop_for_problems() will throw an error if there are any parsing problems 
+# problems(desserts) # a readr function - stop_for_problems() will throw an error if there are any parsing problems 
 
 ```
 
@@ -55,5 +56,48 @@ problems(desserts) # a readr function - stop_for_problems() will throw an error 
 ```{r arrange_sort_desc}
 desserts %>% 
   arrange(desc(uk_airdate))
+```
+
+The last episode in the UK was aired on October 31, 2017. 
+
+# Replace values using dplyr's recode
+
+```{r recode}
+# Count rows grouping by nut variable
+desserts %>% 
+    count(signature_nut, sort = TRUE)
+    
+# Recode filberts as hazelnuts
+desserts <- desserts %>% 
+  mutate(signature_nut = recode(signature_nut, "filbert" = "hazelnut"))
+
+# Count rows again 
+desserts %>% 
+    count(signature_nut, sort = TRUE)
+```
+
+## Creating dummy variables with recode
+
+Dummy variables are often used in data analysis to bin a variable into one of two categories to indicate the absence or presence of something. Dummy variables take the value `0` or `1` to stand for, for example, loser or winner. Dummy variables are often factor variables as opposed to numeric.
+
+```{r dummy_variable_with_recode}
+# desserts <- desserts %>% 
+#   mutate(tech_win = if_else(technical == 1, 1, 0))
+
+desserts <- desserts %>% 
+  mutate(tech_win = recode_factor(technical, `1` = 1,
+                           .default = 0))
+head(desserts)
+
+desserts %>% 
+  count(technical == 1,tech_win)
+```
+
+```{r reorder_colnames_with_dplyr}
+desserts %>% select(noquote(order(colnames(desserts))))
+
+# OR
+
+# desserts[,order(colnames(desserts))]
 ```
 
