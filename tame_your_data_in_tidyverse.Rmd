@@ -101,3 +101,80 @@ desserts %>% select(noquote(order(colnames(desserts))))
 # desserts[,order(colnames(desserts))]
 ```
 
+# Subset your tbl_df with select in dplyr
+
+
+```{r}
+ratings <- read_csv("02.03_messy_ratings.csv",
+                    na = c("", NA, NaN))
+head(ratings)
+
+ratings <- ratings %>% 
+  mutate(bbc = recode_factor(channel, 
+                             `Channel 4` = 0, 
+                             .default = 1))
+
+# ratings %>% 
+#   mutate(viewer_growth = filter(episodes == 10))
+
+ratings <- ratings %>% select(noquote(order(colnames(ratings))))
+# parse_date('17-Aug-10')
+```
+
+```{r}
+# # Select to look at variables to plot next
+# ratings %>% 
+#   select(series, channel, bbc, viewer_growth)
+ 
+# # Make a filled bar chart
+# ggplot(ratings, aes(x = series, y = viewer_growth, fill = bbc)) +
+#   geom_col()
+
+# Move channel to front and drop 7-/28-day episode ratings
+# ratings %>% 
+#   select(channel, everything(), -ends_with("day"))
+```
+
+# Reformat variables with the janitor package
+
+```{r}
+messy_ratings <- read_csv("messy_ratings2.csv",
+                    na = c("", NA, NaN))
+
+head(messy_ratings)
+# Load the janitor package
+library(janitor)
+
+# Reformat to lower camel case
+ratings_new <- messy_ratings %>%
+  clean_names(case = "snake")
+
+head(ratings_new)
+```
+
+```{r}
+# Adapt code to also rename 7-day viewer data
+# viewers_7day <- ratings %>% 
+#     select(series, viewers_7day_ = ends_with("7day"))
+
+# Create tidy data with 7- and 28-day viewers
+# tidy_ratings_all <- ratings2 %>% 
+#     gather(episode, viewers, ends_with("day"), na.rm = TRUE) %>% 
+#     separate(episode, into = c("episode", "days")) %>%  
+#     mutate(episode = parse_number(episode),
+#            days = parse_number(days)) 
+# 
+# tidy_ratings_all %>% 
+# 	# Count viewers by series and days
+#     count(series, days, wt = viewers) %>%
+# 	# Adapt to spread counted values
+#     spread(days, n, sep = "_")
+
+tidy_ratings <- ratings %>%
+    gather(episode, viewers, -series, na.rm = TRUE) %>%
+    mutate(episode = parse_number(episode)) %>% 
+    group_by(episode) %>% 
+    filter(series == 1 | episode == max(episode)) %>% 
+    ungroup()
+```
+

@@ -16,7 +16,11 @@ output:
 
 
 ```{r setup, echo=TRUE}
-knitr::opts_knit$set(root.dir = "~/tidyverse/datasets/")
+knitr::opts_knit$set(root.dir = "C:/Users/USER/tidyverse/datasets")
+```
+
+```{r packrat_init echo=FALSE}
+packrat::init()
 ```
 
 ```{r session_info, include=TRUE, echo=TRUE, results='markup'}
@@ -38,6 +42,8 @@ bakeoff %>% filter(is.na(showstopper))
 
 # convert the "series" variable type from integer to factor
 bakeoff <- bakeoff %>% mutate(series = as.factor(series))
+
+# write_csv(bakeoff, path = "bakers_raw.csv")
 ```
 
 # Getting summary statistics
