@@ -1,0 +1,196 @@
+---
+title: \vspace{3in}transform your data with tidyverse
+author: "Seun Odeyemi"
+date: "October 13, 2018"
+output: 
+  html_document:
+    toc: true
+  pdf_document:
+    df_print: tibble
+    toc: true
+---
+
+\centering
+\raggedright
+\newpage
+
+
+```{r setup, echo=TRUE}
+knitr::opts_knit$set(root.dir = "~/tidyverse")
+```
+
+```{r session_info, include=TRUE, echo=TRUE, results='markup'}
+devtools::session_info()
+```
+
+# Load Packages
+
+```{r loadpackages, message=FALSE}
+library(tidyverse)
+library(skimr)
+library(here)
+```
+
+
+# Import data
+
+```{r import_baker_dataset}
+baker_result <- read_csv("datasets/baker_results.csv")
+dplyr::slice(baker_result, 1:6)
+```
+
+```{r baker_skil}
+# Create skill variable with 3 levels
+
+bakers_skill <- baker_result %>% 
+  mutate(skill = case_when(star_baker > technical_winner ~ "super_star",
+                            star_baker < technical_winner ~ "high_tech",
+                            TRUE ~ "well_rounded"))
+```
+
+
+```{r}
+# Filter zeroes to examine skill variable
+
+bakers_skill %>% 
+  filter(star_baker == 0 & technical_winner == 0) %>% 
+  count(skill)
+```
+
+```{r baker_skill_updated}
+
+# Edit skill variable to have 4 levels
+
+bakers_skill <- baker_result %>% 
+  mutate(skill = case_when(
+    star_baker > technical_winner ~ "super_star",
+    star_baker < technical_winner ~ "high_tech",
+    star_baker == 0 & technical_winner == 0 ~ NA_character_,
+    star_baker == technical_winner  ~ "well_rounded"
+  )) 
+```
+
+```{r}
+# Add pipe to drop skill = NA
+
+bakers_skill <- bakers_skill %>% drop_na(skill)
+```
+
+```{r}
+# Count bakers by skill
+bakers_skill %>%  count(skill) #count(baker, skill) %>% 
+```
+
+```{r}
+bakers_skill %>% 
+  count (skill, sort = TRUE) %>% 
+  mutate(prop = n/sum(n))
+```
+
+```{r bar_plots, out.width='.49\\linewidth', fig.width=3, fig.height=3,fig.show='hold',fig.align='center'}
+ggplot(bakers_skill, aes(skill)) + geom_bar() 
+
+ggplot(bakers_skill, aes(fct_rev(fct_infreq(skill))))  + geom_bar() + xlab("skill")
+
+```
+
+```{r}
+# Cast skill as a factor
+bakers_skill <- bakers_skill %>% 
+  mutate(skill = as.factor(skill))
+
+bakers_skill %>% dplyr::pull(skill) %>% levels()
+```
+
+```{r bar_plots2, fig.width=5, fig.height=5,fig.show='hold',fig.align='center'}
+# Plot counts of bakers by skill, fill by winner
+ggplot(bakers_skill,  aes(x = skill, fill = as.factor(series_winner)))  + geom_bar()
+
+# Edit to reverse x-axis order
+ggplot(bakers_skill, aes(x = fct_rev (skill), fill = as.factor(series_winner))) +
+  geom_bar()
+```
+
+# Working with Dates using the Lubridate Package
+
+```{r}
+hosts <- tibble::tribble(
+  ~host, ~bday, ~premiere, 
+  "Mary", "24 March 1935", "August 17th, 2010", 
+  "Paul", "1 March 1966", "August 17th, 2010")
+```
+
+```{r}
+library(lubridate)
+hosts <- hosts %>% 
+  mutate(bday = dmy(bday),
+         premiere = mdy(premiere))
+glimpse(hosts)
+```
+
+```{r}
+(hosts <- hosts %>% 
+  mutate(age_int = interval(bday, premiere)))
+```
+
+```{r}
+(hosts %>% 
+  mutate(years_decimal = age_int / years(1),
+         years_whole = age_int %/% years(1)) )
+```
+
+```{r}
+# Add a line to extract labeled month
+baker_dates_cast <- baker_result %>% select(series, baker, contains("date"))
+  
+(baker_dates_cast <-  baker_dates_cast %>%  
+  mutate(last_date_appeared_us = ymd(last_date_appeared)) %>% 
+  mutate(last_month_us = month(last_date_appeared, label = TRUE)))
+```
+
+```{r}
+# Make bar chart by last month
+ggplot(baker_dates_cast, aes(last_month_us)) + geom_bar()
+```
+
+```{r}
+# # Create interval between first and last UK dates
+# (baker_dates_cast <- baker_dates_cast %>% 
+#   mutate(time_on_air = interval(first_date_appeared, last_date_appeared )
+#          
+# baker_dates_cast <- baker_dates_cast %>%
+#   select(-c(last_month_us, time_on_air))
+# 
+# glimpse(baker_dates_cast)
+# # 
+# # baker_dates_cast <- baker_dates_cast %>% 
+# #   rename( first_date_appeared_us = first_date_us,
+# #          last_date_appeared_us = last_date_us)
+
+
+
+```
+
+```{r}
+# Create interval between first and last UK dates
+# (baker_dates_cast <- baker_dates_cast %>% 
+#   mutate(time_on_air = lubridate::interval(baker_dates_cast$first_date_appeared_uk, baker_dates_cast$last_date_appeared_uk),
+#          weeks_on_air = time_on_air / weeks(1), # Add a line to create weeks on air variable
+#          months_on_air = time_on_air %/% months(1))) # Add a line to create whole months on air variable
+
+# head(baker_dates_cast)
+```
+
+# Working with strings in tidyverse
+
+```{r}
+library(stringr)
+
+baker_result %>% 
+  mutate(baker_full = str_to_upper(baker_full),
+         occupation = str_to_upper(occupation),
+         student = str_detect(occupation, "STUDENT")) %>% 
+  filter(student == TRUE) %>% 
+  select(baker, occupation, student)
+```
+
