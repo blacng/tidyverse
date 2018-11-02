@@ -1,0 +1,121 @@
+---
+title: "introduction to modelling in tidyverse"
+author: "Seun Odeyemi"
+date: "October 30, 2018"
+output: 
+  html_document:
+    toc: true
+  pdf_document:
+    df_print: tibble
+    toc: true
+---
+
+
+```{r setup, incude=TRUE, echo=TRUE}
+knitr::opts_knit$set(root.dir = "~/tidyverse")
+```
+
+```{r session_info, include=TRUE, echo=TRUE, results='markup'}
+devtools::session_info()
+```
+
+```{r setseed, include=TRUE}
+set.seed(35793168)
+# runif(1, 0, 10^8)
+```
+
+```{r loadpackages, include=TRUE, echo=TRUE, message=FALSE}
+library(dplyr)
+library(ggplot2)
+library(here)
+# library(janitor)
+library(moderndive)
+library(gridExtra)
+```
+
+# Modeling for explanation
+
+## Load data
+
+```{r loaddata_evals, include=TRUE, echo=TRUE}
+glimpse(evals)
+# class(evals)
+```
+
+## EDA of the score variable
+
+### Plot the histogram of the score and age variable
+
+```{r xplor_plot_hist_age, include=TRUE, echo=TRUE,fig.show='hold',fig.align='center'}
+p1 <- ggplot(evals, aes(x = score)) +
+  geom_histogram(binwidth = 0.25) + 
+  labs(x = "teaching score", y = "count")
+
+p2 <- ggplot(evals, aes(x = age)) +
+  geom_histogram(binwidth = 5) + 
+  labs(x = "instructor age", y = "count")
+
+grid.arrange(p1, p2, ncol = 2)
+```
+
+### Compute the summary statistics of the score and age variable
+
+```{r sum_stat, include=TRUE, echo=TRUE}
+evals %>% 
+  summarise(mean.score = mean(score),
+            median.score = median(score),
+            sd.score = sd(score))
+evals %>% 
+  summarise(mean.age = mean(age),
+            median.age = median(age),
+            sd.age = sd(age))
+```
+
+# Modeling for prediction
+
+```{r loaddata_house_price}
+glimpse(house_prices)
+```
+
+
+## EDA of price variable
+
+```{r plot_house_prices, include=TRUE, echo=TRUE,fig.show='hold',fig.align='center'}
+pp1 <- ggplot(house_prices, aes(x = price)) + 
+  geom_histogram() + 
+  labs(x = "house price", y = "count") +
+  scale_x_continuous(labels = function(x) format(x, big.mark = ",", scientific = FALSE))
+
+pp2 <- ggplot(house_prices, aes(x = log10(price))) + 
+  geom_histogram() + 
+  labs(x = "log 10 house price", y = "count") +
+  scale_x_continuous(labels = function(x) format(x, big.mark = ",", scientific = FALSE))
+
+grid.arrange(pp1, pp2, ncol = 2)
+  
+```
+
+## EDA of sqft_living variable
+
+```{r}
+# Add log10_size
+house_prices_2 <- house_prices %>%
+  mutate(log10_size = log10(sqft_living))
+```
+
+
+```{r plot_sqft_living, include=TRUE, echo=TRUE,fig.show='hold',fig.align='center'}
+# Plot the histogram
+sq.ft <- ggplot(house_prices, aes(x = sqft_living)) +
+  geom_histogram() +
+  labs(x = "Size (sq.feet)", y = "count")
+
+
+# Plot the histogram  
+sq.ft.log10 <- ggplot(house_prices_2, aes(x = log10_size)) +
+  geom_histogram() +
+  labs(x = "log10 size", y = "count")
+
+grid.arrange(sq.ft, sq.ft.log10, ncol = 2)
+```
+
